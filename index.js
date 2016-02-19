@@ -1,23 +1,44 @@
+var http = require('http');
 var GitHubApi = require('github');
 var jade = require('jade');
+
+const PORT = 3000;
+const PRETTY = true;
 
 var github = new GitHubApi({version: '3.0.0'});
 
 var render = {
   jade: function(content) {
-    var fn = jade.compile(content, {pretty: true});
-    var html = fn();
-    console.log(html);
+    var html = jade.compile(content, {pretty: PRETTY})();
+    return html;
+  }
+  ,html: function(content) {
+    return content;
   }
 };
 
-github.gists.get({id: '252f5c6ac19879dfbda9'}, function(err, gist) {
-  if (err) throw err;
 
-  var index = gist.files['index.jade'] || gist.files['index.html'];
-  if (!index) throw new Error('found no index');
+function handleRequest(req, res) {
+  var id = req.url.split('/').pop();
+  if (!/^[0-9a-f]{20}$/.test(id)) return console.log('ignoring request: ' + id);
+  console.log('fetching gist: ' + id);
 
-  var extension = index.filename.split('.').pop();
-  var renderer = render[extension];
-  var html = renderer(index.content);
+
+  github.gists.get({id: id}, function(err, gist) {
+    if (err) throw err;
+
+    var file = gist.files['index.jade'] || gist.files['index.html'];
+    if (!file) throw new Error('found no index');
+
+    var ext  = file.filename.split('.').pop();
+    var html = render[ext](file.content);
+
+    res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+    res.end(html);
+  });
+}
+
+var server = http.createServer(handleRequest);
+server.listen(3000, function() {
+  console.log('Server listening on: http://localhost:%s', PORT);
 });
