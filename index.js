@@ -17,25 +17,37 @@ var render = {
   }
 };
 
-
+var gist = {};
 function handleRequest(req, res) {
   var id = req.url.split('/').pop();
-  if (!/^[0-9a-f]{20}$/.test(id)) return console.log('ignoring request: ' + id);
-  console.log('fetching gist: ' + id);
+  if (/^[0-9a-f]{20}$/.test(id)) {
+    console.log('fetching gist: ' + id);
+    github.gists.get({id: id}, function(err, gistJson) {
+      if (err) throw err;
+      gist = gistJson;
 
+      var file = gist.files['index.jade'] || gist.files['index.html'];
+      if (!file) throw new Error('found no index');
 
-  github.gists.get({id: id}, function(err, gist) {
-    if (err) throw err;
+      var ext  = file.filename.split('.').pop();
+      var html = render[ext](file.content);
 
-    var file = gist.files['index.jade'] || gist.files['index.html'];
-    if (!file) throw new Error('found no index');
-
-    var ext  = file.filename.split('.').pop();
-    var html = render[ext](file.content);
-
-    res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
-    res.end(html);
-  });
+      res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+      return res.end(html);
+    });
+  } else if(/\.js$/.test(id)) {
+    console.log('TODO: handle JS request');
+    res.writeHead(404);
+    return res.end();
+  } else if(/\.css$/.test(id)) {
+    console.log('TODO: handle CSS request');
+    res.writeHead(404);
+    return res.end();
+  } else {
+    console.log('ignoring request: ' + id);
+    res.writeHead(404);
+    return res.end();
+  }
 }
 
 var server = http.createServer(handleRequest);
