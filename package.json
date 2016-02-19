@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "github": "^0.2.4",
-    "jade": "^1.11.0"
+    "jade": "^1.11.0",
+    "nib": "^1.1.0",
+    "stylus": "0.49.3"
   }
 }
