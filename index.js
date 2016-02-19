@@ -5,7 +5,7 @@ var nib = require('nib');
 
 var GitHubApi = require('github');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const PRETTY = true;
 
 var github = new GitHubApi({version: '3.0.0'});
