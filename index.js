@@ -17,8 +17,8 @@ var render = {
   }
   ,html: function(str) { return str; }
   ,js:   function(str) { return str; }
-  ,css:  function(str) { return str; }
 
+  ,css:  function(str, cb) { return cb(str); }
   ,styl: function(str, cb) {
 
     stylus(str)
