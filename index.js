@@ -1,4 +1,5 @@
-var http = require('http');
+var express = require('express');
+var path = require('path');
 var jade = require('jade');
 var stylus = require('stylus');
 var nib = require('nib');
@@ -29,56 +30,51 @@ var render = {
   }
 };
 
-var gist = {};
-function handleRequest(req, res) {
+var app = express();
 
-  function notFound() {
-    res.writeHead(404);
-    res.end();
-  }
+// trailing slash; paramount to get relatvie resources (like a script.js) right
+app.get('/gists/:id', function(req, res, next) {
+  if (req.originalUrl.substr(-1) == '/') return next();
+  res.redirect(req.originalUrl + '/');
+});
 
-  var id = req.url.split('/').pop();
+// gist loading middleware
+app.get('/gists/:id/*', function (req, res, next) {
+  github.gists.get({id: req.params.id}, function(err, gist) {
+    if (err) next(err);
+    req.gist = gist;
+    next();
+  });
+});
 
-  if (/^[0-9a-f]{20}$/.test(id)) {
-    console.log('fetching gist: ' + id);
-    github.gists.get({id: id}, function(err, gistJson) {
-      if (err) throw err;
-      gist = gistJson;
+app.get('/gists/:id/', function (req, res) {
+  var file = req.gist.files['index.jade'] || req.gist.files['index.html'];
+  if (!file) throw new Error('found no index');
+  var ext  = file.filename.split('.').pop();
+  res.send(render[ext](file.content));
+});
 
-      // consider looking for index.* then: if (render[ext]) ...
-      var file = gist.files['index.jade'] || gist.files['index.html'];
-      if (!file) throw new Error('found no index');
+// TODO a simple path looking for only the file(name) requested
+// app.get('/gists/:id/:file', function (req, res) {});
 
-      var ext  = file.filename.split('.').pop();
-      res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
-      res.end(render[ext](file.content));
+var headers = {js: 'application/javascript', css: 'text/css'};
+app.get('/gists/:id/:file', function (req, res, next) {
+  var urlPath = path.parse(req.params.file);
+  if (urlPath.ext) urlPath.ext = urlPath.ext.substr(1); // remove prefix-dot
+  var exts = ({html: ['html', 'jade'], css: ['css', 'styl'], js: ['js']})[urlPath.ext];
+  for (var i in exts) {
+    var ext = exts[i];
+    var file = req.gist.files[urlPath.name + '.' + ext];
+    if (!file) continue;
+    return render[ext](file.content, function(content) {
+      if (headers[urlPath.ext]) res.writeHead(200, {'Content-Type': headers[urlPath.ext] + '; charset=utf-8'});
+      res.end(content);
     });
-
-  } else if(/\.js$/.test(id)) {
-    if (!gist.files || !gist.files[id]) return notFound();
-
-    var file = gist.files[id];
-    var ext = file.filename.split('.').pop();
-    res.writeHead(200, {'Content-Type': 'application/javascript; charset=utf-8'});
-    res.end(render[ext](file.content));
-
-  } else if(/\.css$/.test(id)) {
-    var base = id.match(/^(.+)\.css$/)[1];
-    var file = gist.files[base + '.styl'] || gist.files[base + '.css'];
-    if (!id) return notFound();
-
-    var ext = file.filename.split('.').pop();
-    render[ext](file.content, function(css) {
-      res.writeHead(200, {'Content-Type': 'text/css; charset=utf-8'});
-      res.end(css);
-    });
-
-  } else {
-    notFound();
   }
-}
+  next('Could not handle: ' + req.params.file);
+});
 
-var server = http.createServer(handleRequest);
-server.listen(PORT, function() {
+
+app.listen(PORT, function () {
   console.log('Server listening on: http://localhost:%s', PORT);
 });

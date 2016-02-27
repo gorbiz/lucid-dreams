@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Serve git repos & gist, with automatic precompilation",
   "main": "index.js",
+  "engines" : { "node" : ">=4.3.1" },
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,6 +11,7 @@
   "author": "Karl Svartholm <gorbiz@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.13.4",
     "github": "^0.2.4",
     "jade": "^1.11.0",
     "nib": "^1.1.0",
