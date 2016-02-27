@@ -6,21 +6,20 @@ var nib = require('nib');
 var GitHubApi = require('github');
 
 const PORT = process.env.PORT || 3000;
-const PRETTY = true;
+const PRETTY_RENDER = true;
 
 var github = new GitHubApi({version: '3.0.0'});
 
 var render = {
-  jade: function(str) {
-    var html = jade.compile(str, {pretty: PRETTY})();
-    return html;
+  jade: function(str, cb) {
+    str = jade.compile(str, {pretty: PRETTY_RENDER})();
+    return cb && cb(str) || str;
   }
-  ,html: function(str) { return str; }
-  ,js:   function(str) { return str; }
+  ,html: function(str, cb) { return cb && cb(str) || str; }
+  ,js:   function(str, cb) { return cb && cb(str) || str; }
 
-  ,css:  function(str, cb) { return cb(str); }
+  ,css:  function(str, cb) { return cb && cb(str) || str; }
   ,styl: function(str, cb) {
-
     stylus(str)
       .set('filename', 'derp.css')
       .use(nib())
