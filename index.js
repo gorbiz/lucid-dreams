@@ -13,7 +13,7 @@ var github = new GitHubApi({version: '3.0.0'});
 
 var render = {
   jade: function(str, cb) {
-    str = jade.compile(str, {pretty: PRETTY_RENDER})();
+    str = jade.compile(str, {pretty: false || PRETTY_RENDER})();
     return cb && cb(str) || str;
   }
   ,html: function(str, cb) { return cb && cb(str) || str; }
