@@ -16,10 +16,6 @@ var render = {
     str = jade.compile(str, {pretty: false || PRETTY_RENDER})();
     return cb && cb(str) || str;
   }
-  ,html: function(str, cb) { return cb && cb(str) || str; }
-  ,js:   function(str, cb) { return cb && cb(str) || str; }
-
-  ,css:  function(str, cb) { return cb && cb(str) || str; }
   ,styl: function(str, cb) {
     stylus(str)
       .set('filename', 'derp.css')
@@ -54,20 +50,31 @@ app.get('/gists/:id/', function (req, res) {
   res.send(render[ext](file.content));
 });
 
-// TODO a simple path looking for only the file(name) requested
-// app.get('/gists/:id/:file', function (req, res) {});
+var contentType = {js: 'application/javascript', css: 'text/css'};
 
-var headers = {js: 'application/javascript', css: 'text/css'};
+// first look for exactly the file requested (same file extension)
+app.get('/gists/:id/:file', function (req, res, next) {
+  if (!req.gist.files[req.params.file]) return next();
+  var   file = req.params.file
+      , ext = file.split('.').pop()
+      , content = req.gist.files[file].content;
+  if (!render[ext]) return res.end(content);
+  render[ext](content, function(transformed) {
+    if (contentType[ext]) res.writeHead(200, {'Content-Type': contentType[ext] + '; charset=utf-8'});
+    res.end(content);
+  });
+});
+
 app.get('/gists/:id/:file', function (req, res, next) {
   var urlPath = path.parse(req.params.file);
   if (urlPath.ext) urlPath.ext = urlPath.ext.substr(1); // remove prefix-dot
-  var exts = ({html: ['html', 'jade'], css: ['css', 'styl'], js: ['js']})[urlPath.ext];
+  var exts = ({html: ['jade'], css: ['styl']})[urlPath.ext];
   for (var i in exts) {
     var ext = exts[i];
     var file = req.gist.files[urlPath.name + '.' + ext];
     if (!file) continue;
     return render[ext](file.content, function(content) {
-      if (headers[urlPath.ext]) res.writeHead(200, {'Content-Type': headers[urlPath.ext] + '; charset=utf-8'});
+      if (contentType[urlPath.ext]) res.writeHead(200, {'Content-Type': contentType[urlPath.ext] + '; charset=utf-8'});
       res.end(content);
     });
   }
