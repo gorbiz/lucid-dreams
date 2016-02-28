@@ -12,17 +12,15 @@ const PRETTY_RENDER = true;
 var github = new GitHubApi({version: '3.0.0'});
 
 var render = {
-  jade: function(str, cb) {
+  jade: function(str) {
     str = jade.compile(str, {pretty: false || PRETTY_RENDER})();
-    return cb && cb(str) || str;
+    return str;
   }
-  ,styl: function(str, cb) {
-    stylus(str)
+  ,styl: function(str) {
+    return stylus(str)
       .set('filename', 'derp.css')
       .use(nib())
-      .render(function(err, css) {
-        return cb(css);
-      });
+      .render();
   }
 };
 
@@ -73,10 +71,9 @@ app.get('/gists/:id/:file', function (req, res, next) {
     var ext = exts[i];
     var file = req.gist.files[urlPath.name + '.' + ext];
     if (!file) continue;
-    return render[ext](file.content, function(content) {
-      if (contentType[urlPath.ext]) res.writeHead(200, {'Content-Type': contentType[urlPath.ext] + '; charset=utf-8'});
-      res.end(content);
-    });
+    var content = render[ext](file.content);
+    if (contentType[urlPath.ext]) res.writeHead(200, {'Content-Type': contentType[urlPath.ext] + '; charset=utf-8'});
+    res.end(content);
   }
   next('Could not handle: ' + req.params.file);
 });
