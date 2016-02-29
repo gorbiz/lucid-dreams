@@ -50,7 +50,13 @@ describe('transerver', function(){
         t.get('style.css'));
     });
 
-    it('jade with includes');
+    it('jade with includes', function(){
+      var t = transerver({files: {
+        'index.jade': {content: 'body: include time.jade'},
+        'time.jade':  {content: 'time Hammer!'}
+      }});
+      assert.equal('<body><time>Hammer!</time></body>', t.get('index.html'));
+    });
 
   });
 });
