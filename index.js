@@ -10,14 +10,15 @@ var app = express();
 
 var cache = {};
 
+var trailingSlash = function(req, res, next) {
+  if (req.originalUrl.substr(-1) == '/') return next();
+  res.redirect(req.originalUrl + '/');
+};
+
 // gists
 
 // trailing slash; paramount to get relatvie resources (like a script.js) right
-app.get('/gists/:id', function(req, res, next) {
-  if (req.originalUrl.substr(-1) == '/') return next();
-  res.redirect(req.originalUrl + '/');
-});
-
+app.get('/gists/:id', trailingSlash);
 // gist loading middleware & (in memory) cache
 app.get('/gists/:id/*', function (req, res, next) {
   var id = req.params.id;
@@ -51,6 +52,8 @@ app.get('/gists/:id/:file?', transerverServer);
 
 // repos
 
+// trailing slash; paramount to get relatvie resources (like a script.js) right
+app.get('/:user/:repo', trailingSlash);
 app.get('/:user/:repo/*', function (req, res, next) {
   var user = req.params.user, repo = req.params.repo;
   // ex https://api.github.com/repos/gorbiz/latin-book/commits
