@@ -65,5 +65,15 @@ describe('transerver', function(){
       }});
       assert.equal('<style>body {\n  color: #2cc48a;\n}\n</style>', t.get('index.html'));
     });
+
+    it('jade with extends & relative paths', function(){
+      var t = transerver({files: {
+        'a/layout.jade': {content: 'body\n  block content'},
+        'a/index.jade':  {content: 'extends layout.jade\nblock content\n  p index'},
+        'a/index2.jade': {content: 'extends ./layout.jade\nblock content\n  p index'}
+      }});
+      assert.equal('<body><p>index</p></body>', t.get('a/index.html'));
+      assert.equal('<body><p>index</p></body>', t.get('a/index2.html'));
+    });
   });
 });
