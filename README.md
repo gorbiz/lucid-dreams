@@ -17,3 +17,18 @@ https://github.com/gorbiz/latin-book
 
 PS.
 This is running on *gorbiz.com*.
+
+## Ideas
+### Browser extension like bl.ocks’
+See: https://github.com/mbostock/bl.ocks.org/tree/master/chrome/bl.ocks.chrome
+
+### /edit => brings editor with real-time feedback
+Imagine a side-by-side editor (~[CodePen](https://codepen.io)).  
+Use ex. [CodeMirror](https://codemirror.net/); precompile & reload on change.
+
+Also allow initiating **pull request** (save changes).
+
+This would, could or should:
+ - ease quick fixes
+ - ease development & testing for normal humans
+ - [ and there was a third thing?.. ]
