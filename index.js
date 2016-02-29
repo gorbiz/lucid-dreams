@@ -2,10 +2,15 @@ var GitHubApi = require('github');
 var express = require('express');
 var transerver = require('./lib/transerver');
 var mime = require('mime');
+var async = require('async');
 
 const PORT = process.env.PORT || 3000;
 var github = new GitHubApi({version: '3.0.0'});
 var app = express();
+
+var cache = {};
+
+// gists
 
 // trailing slash; paramount to get relatvie resources (like a script.js) right
 app.get('/gists/:id', function(req, res, next) {
@@ -14,7 +19,6 @@ app.get('/gists/:id', function(req, res, next) {
 });
 
 // gist loading middleware & (in memory) cache
-var cache = {};
 app.get('/gists/:id/*', function (req, res, next) {
   var id = req.params.id;
 
@@ -32,7 +36,7 @@ app.get('/gists/:id/*', function (req, res, next) {
   });
 });
 
-app.get('/gists/:id/:file?', function (req, res, next) {
+var transerverServer = function (req, res, next) {
   var file = req.params.file || 'index.html';
   var content = req.transerver.get(file);
   if (!content) res.status(404).send('Sorry, can\'t find that :/');
@@ -41,7 +45,54 @@ app.get('/gists/:id/:file?', function (req, res, next) {
       chr = mime.charsets.lookup(mim);
   res.writeHead(200, {'Content-Type': mim + (chr ? '; charset=' + chr : '')  });
   return res.end(content);
+};
+
+app.get('/gists/:id/:file?', transerverServer);
+
+// repos
+
+app.get('/:user/:repo/*', function (req, res, next) {
+  var user = req.params.user, repo = req.params.repo;
+  // ex https://api.github.com/repos/gorbiz/latin-book/commits
+  github.repos.getCommits({user: user, repo: repo}, function(err, commits) {
+    if (err) return next(err);
+    if (!commits.length) return res.status(204).send('No Content');
+    // ex https://api.github.com/repos/gorbiz/latin-book/git/trees/70e964e8dadbc84eb5250648b70f53c82d046318
+
+    var sha = commits[0].sha;
+    if (cache[user+'#'+repo+'#'+sha]) {
+      // TODO check cache headers...
+      console.log('loading ' + user+'/'+repo+'#'+sha + ' from cache.');
+      req.transerver = cache[user+'#'+repo+'#'+sha];
+      return next();
+    }
+
+    github.gitdata.getTree({ user: user, repo: repo, sha: sha, recursive: true
+      }, function(err, tree) {
+          if (err) return next(err);
+
+          var files = {};
+          async.map(tree.tree,
+              function(node, cb) {
+                if (node.type != 'blob') cb(new Error('Not sure what to do with a ' + node.type + ' (only "blob" implemented)'));
+                node.filename = node.path;
+                // ex https://api.github.com/repos/gorbiz/latin-book/git/blobs/a25df821ae7ac0f135d9f455b9987457f1d4e01f
+                github.gitdata.getBlob({user: user, repo: repo, sha: node.sha}, function(err, blob) {
+                  if (err) return cb(err);
+                  node.content = '' + new Buffer(blob.content, 'base64');
+                  files[node.path] = node;
+                  cb();
+                });
+              }, function(err) {
+                if (err) return next(err);
+                req.transerver = cache[user+'#'+repo+'#'+sha] = transerver({files: files});
+                next();
+              });
+      });
+  });
 });
+
+app.get('/:user/:repo/:file?', transerverServer);
 
 app.listen(PORT, function () {
   console.log('Server listening on: http://localhost:%s', PORT);
