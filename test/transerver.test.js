@@ -58,5 +58,12 @@ describe('transerver', function(){
       assert.equal('<body><time>Hammer!</time></body>', t.get('index.html'));
     });
 
+    it('jade with filters', function(){
+      var t = transerver({files: {
+        'index.jade': {content: 'style: include:stylus style.styl'},
+        'style.styl': {content: 'body\n  color: #2cc48a'}
+      }});
+      assert.equal('<style>body {\n  color: #2cc48a;\n}\n</style>', t.get('index.html'));
+    });
   });
 });
