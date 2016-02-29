@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-var transerver = require('../lib/transerver.js');
+var transerver = require('../lib/transerver');
 
 describe('transerver', function(){
 
