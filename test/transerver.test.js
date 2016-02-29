@@ -27,5 +27,15 @@ describe('transerver', function(){
       }});
       assert.equal('<h1>HAI!</h1>', t.get('index.html'));
     });
+
+    it('should serve stylus', function(){
+      var t = transerver({files: {
+        'style.styl': {content: 'body\n  padding: 50px'}
+      }});
+      assert.equal('body {\n  padding: 50px;\n}\n', t.get('style.css'));
+    });
+
+    it('should serve stylus with nib');
+    it('should serve stylus with that other thing available @ CodePen...');
   });
 });
