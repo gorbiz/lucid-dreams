@@ -77,7 +77,8 @@ app.get('/:user/:repo/*', function (req, res, next) {
           var files = {};
           async.map(tree.tree,
               function(node, cb) {
-                if (node.type != 'blob') cb(new Error('Not sure what to do with a ' + node.type + ' (only "blob" implemented)'));
+                if (node.type == 'tree') return cb(); // don't need folders
+                if (node.type != 'blob') cb(new Error('Not sure what to do with a "' + node.type + '"'));
                 node.filename = node.path;
                 // ex https://api.github.com/repos/gorbiz/latin-book/git/blobs/a25df821ae7ac0f135d9f455b9987457f1d4e01f
                 github.gitdata.getBlob({user: user, repo: repo, sha: node.sha}, function(err, blob) {
@@ -95,7 +96,7 @@ app.get('/:user/:repo/*', function (req, res, next) {
   });
 });
 
-app.get('/:user/:repo/:file?', transerverServer);
+app.get('/:user/:repo/:file(*)', transerverServer);
 
 app.listen(PORT, function () {
   console.log('Server listening on: http://localhost:%s', PORT);
