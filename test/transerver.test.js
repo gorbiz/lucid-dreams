@@ -35,7 +35,13 @@ describe('transerver', function(){
       assert.equal('body {\n  padding: 50px;\n}\n', t.get('style.css'));
     });
 
-    it('should serve stylus with nib');
+    it('should serve stylus with nib', function(){
+      var t = transerver({files: {
+        'style.styl': {content: '@import nib\n#right\n  fixed: right'}
+      }});
+      assert.equal('#right {\n  position: fixed;\n  right: 0;\n}\n', t.get('style.css'));
+    });
+
     it('should serve stylus with that other thing available @ CodePen...');
   });
 });
