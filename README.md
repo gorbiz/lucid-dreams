@@ -8,6 +8,7 @@ http://host/GIST_ID/[filename]
 http://host/USER/REPO/[filename]
 http://host/USER/REPO/commit/SHA/[filename]
 ```
+![Dependency Status](https://david-dm.org/gorbiz/lucid-dreams.svg)
 
 ## Examples
 https://gist.github.com/gorbiz/252f5c6ac19879dfbda9  
