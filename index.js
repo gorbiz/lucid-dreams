@@ -6,11 +6,13 @@ var async = require('async');
 
 const PORT = process.env.PORT || 3000;
 var github = new GitHubApi({version: '3.0.0'});
-github.authenticate({
-    type: 'basic',
-    username: 'gorbiz',
-    password: '***REMOVED***'
-});
+if (process.env.GIT_USER && process.env.GIT_PASS) {
+  github.authenticate({
+      type: 'basic',
+      username: process.env.GIT_USER,
+      password: process.env.GIT_PASS
+  });
+}
 
 var app = express();
 
